@@ -1,16 +1,28 @@
 FROM node:22-alpine AS builder
 WORKDIR /work
+
+ARG USE_CN_MIRROR
+
 COPY . .
-RUN rm -rf dist && \
-    npm config set registry "https://registry.npmmirror.com/" && \
-    npm install && \
-    npm run build
+RUN \
+    # If you want to build docker in China, build with --build-arg USE_CN_MIRROR=true
+    if [ "${USE_CN_MIRROR:-false}" = "true" ]; then \
+        npm config set registry "https://registry.npmmirror.com/"; \
+    fi \
+    && npm install \
+    && npm run build
 
 # 基础镜像声明
-## 使用 scratch 作为基础镜像创建一个最小化的容器环境
-FROM scratch
+FROM nginx:1.28-alpine
 
-COPY --from=builder /work/dist /app
+COPY ./nginx.conf /etc/nginx/conf.d/default.conf
+COPY --from=builder /work/dist /usr/share/nginx/html
 
-# 容器不运行任何主进程，仅作为卷容器使用
-CMD [ "true" ]
+# Switch to non-root user
+# USER nginx
+
+# Expose port
+# EXPOSE 80
+
+# Start Nginx
+# CMD ["nginx", "-g", "daemon off;"]
