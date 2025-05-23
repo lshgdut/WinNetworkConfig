@@ -15,6 +15,7 @@ RUN \
 # 基础镜像声明
 FROM nginx:1.28-alpine
 
+ENV PORT=80
 ENV NW_API_PORT=8080
 COPY ./nginx.conf /etc/nginx/templates/default.conf.template
 COPY --from=builder /work/dist /usr/share/nginx/html
